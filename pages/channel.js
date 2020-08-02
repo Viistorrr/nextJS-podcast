@@ -1,26 +1,23 @@
+import Link from "next/link";
 export default class extends React.Component {
   static async getInitialProps({ query }) {
     let idChannel = query.id;
 
-    let reqChannel = await fetch(
-      `https://api.audioboom.com/channels/${idChannel}`
-    );
+    let [reqChannel, reqSeries, reqAudios] = await Promise.all([
+      //Mejora el performance de la App porque hace los request en paralelo
+      fetch(`https://api.audioboom.com/channels/${idChannel}`),
+      fetch(`https://api.audioboom.com/channels/${idChannel}/child_channels`),
+      fetch(`https://api.audioboom.com/channels/${idChannel}/audio_clips`)
+    ]);
+
     let dataChannel = await reqChannel.json();
     let channel = dataChannel.body.channel;
 
-    let reqAudios = await fetch(
-      `https://api.audioboom.com/channels/${idChannel}/audio_clips`
-    );
     let dataAudios = await reqAudios.json();
     let audioClips = dataAudios.body.audio_clips;
 
-    let reqSeries = await fetch(
-      `https://api.audioboom.com/channels/${idChannel}/child_channels`
-    );
     let dataSeries = await reqSeries.json();
     let series = dataSeries.body.channels;
-
-    console.log(series);
 
     return { channel, audioClips, series };
   }
@@ -34,9 +31,15 @@ export default class extends React.Component {
         <h1>{channel.title}</h1>
 
         <h2>Ultimos Podcasts</h2>
-        {audioClips.map(clip => (
-          <div>{clip.title}</div>
-        ))}
+        <ul>
+          {audioClips.map(clip => (
+            <li>
+              <Link href={`/podcast?id=${channel.id}`}>
+                <a>{clip.title}</a>
+              </Link>
+            </li>
+          ))}
+        </ul>
 
         <h2>Series</h2>
         {series.map(serie => (
