@@ -1,8 +1,14 @@
 import Link from "next/link";
 import Layout from "../components/Layout";
+import PodcastListWithClick from "../components/PodcastListWithClick";
+import PodcastPlayer from "../components/PodcastPlayer";
 import Error from "./_error";
 
 export default class extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { openPodcast: null };
+  }
   static async getInitialProps({ query, res }) {
     let idChannel = query.id;
     try {
@@ -38,8 +44,23 @@ export default class extends React.Component {
     }
   }
 
+  openPodcast = (event, podcast) => {
+    event.preventDefault();
+    this.setState({
+      openPodcast: podcast
+    });
+  };
+
+  closePodcast = event => {
+    event.preventDefault();
+    this.setState({
+      closePodcast: null
+    });
+  };
+
   render() {
     const { channel, audioClips, series, statusCode } = this.props;
+    const { openPodcast } = this.state;
 
     if (statusCode !== 200) {
       return <Error statusCode={statusCode} />;
@@ -47,18 +68,24 @@ export default class extends React.Component {
 
     return (
       <Layout title={channel.title}>
+        <div
+          className="banner"
+          style={{
+            backgroundImage: `url(${channel.urls.banner_image.original})`
+          }}
+        />
+        {openPodcast && (
+          <div className="modal">
+            <PodcastPlayer clip={openPodcast} onClose={this.closePodcast} />
+          </div>
+        )}
         <h1>{channel.title}</h1>
 
         <h2>Ultimos Podcasts</h2>
-        <ul>
-          {audioClips.map(clip => (
-            <li>
-              <Link href={`/podcast?id=${channel.id}`}>
-                <a>{clip.title}</a>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <PodcastListWithClick
+          podcasts={audioClips}
+          onClickPodcast={this.openPodcast}
+        />
 
         <h2>Series</h2>
         {series.map(serie => (

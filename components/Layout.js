@@ -1,5 +1,13 @@
 import Link from "next/link";
 import Head from "next/head";
+import NProgress from "nprogress";
+import Router from "next/router";
+
+Router.onRouteChangeStart = url => {
+  NProgress.start();
+};
+Router.onRouteChangeComplete = () => NProgress.done();
+Router.onRouteChangeError = () => NProgress.done();
 
 export default class Layout extends React.Component {
   render() {
@@ -36,6 +44,9 @@ export default class Layout extends React.Component {
             margin: 0;
             font-family: system-ui;
             background: white;
+          }
+          #nprogress {
+            pointer-events: none;
           }
         `}</style>
       </div>
