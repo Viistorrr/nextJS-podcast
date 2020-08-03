@@ -1,33 +1,52 @@
 import Link from "next/link";
+import Layout from "../components/Layout";
+import Error from "./_error";
+
 export default class extends React.Component {
-  static async getInitialProps({ query }) {
+  static async getInitialProps({ query, res }) {
     let idChannel = query.id;
+    try {
+      let [reqChannel, reqSeries, reqAudios] = await Promise.all([
+        //Mejora el performance de la App porque hace los request en paralelo
+        fetch(`https://api.audioboom.com/channels/${idChannel}`),
+        fetch(`https://api.audioboom.com/channels/${idChannel}/child_channels`),
+        fetch(`https://api.audioboom.com/channels/${idChannel}/audio_clips`)
+      ]);
 
-    let [reqChannel, reqSeries, reqAudios] = await Promise.all([
-      //Mejora el performance de la App porque hace los request en paralelo
-      fetch(`https://api.audioboom.com/channels/${idChannel}`),
-      fetch(`https://api.audioboom.com/channels/${idChannel}/child_channels`),
-      fetch(`https://api.audioboom.com/channels/${idChannel}/audio_clips`)
-    ]);
+      if (reqChannel.status >= 400) {
+        res.statusCode = reqChannel.status;
+        return {
+          channel: null,
+          audioClips: null,
+          series: null,
+          statusCode: reqChannel.status
+        };
+      }
 
-    let dataChannel = await reqChannel.json();
-    let channel = dataChannel.body.channel;
+      let dataChannel = await reqChannel.json();
+      let channel = dataChannel.body.channel;
 
-    let dataAudios = await reqAudios.json();
-    let audioClips = dataAudios.body.audio_clips;
+      let dataAudios = await reqAudios.json();
+      let audioClips = dataAudios.body.audio_clips;
 
-    let dataSeries = await reqSeries.json();
-    let series = dataSeries.body.channels;
+      let dataSeries = await reqSeries.json();
+      let series = dataSeries.body.channels;
 
-    return { channel, audioClips, series };
+      return { channel, audioClips, series, statusCode: 200 };
+    } catch (e) {
+      return { channel: null, audioClips: null, series: null, statusCode: 503 };
+    }
   }
 
   render() {
-    const { channel, audioClips, series } = this.props;
+    const { channel, audioClips, series, statusCode } = this.props;
+
+    if (statusCode !== 200) {
+      return <Error statusCode={statusCode} />;
+    }
 
     return (
-      <div>
-        <header>@viistorrr Podcasts</header>
+      <Layout title={channel.title}>
         <h1>{channel.title}</h1>
 
         <h2>Ultimos Podcasts</h2>
@@ -90,7 +109,7 @@ export default class extends React.Component {
             background: white;
           }
         `}</style>
-      </div>
+      </Layout>
     );
   }
 }
