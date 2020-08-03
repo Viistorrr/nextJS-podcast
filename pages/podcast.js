@@ -13,7 +13,6 @@ export default class extends React.Component {
   }
   render() {
     const { infoPodcast } = this.props;
-    console.log(infoPodcast);
     return (
       <div>
         <header>Podcasts</header>
